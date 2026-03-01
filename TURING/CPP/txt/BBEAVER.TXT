@@ -1,0 +1,10 @@
+           #PROGRAMS	   #Steps BBn   Year-found
+------------------------------------------------
+BBEAVER 1:   257	       1
+BBEAVER 2:  >6000	       6
+BBEAVER 3: millions	       21
+BBEAVER 4: billions	       107       (1974)
+BBEAVER 5: 17 trillion      47.176.870   (2026)
+BBEAVER 6: 60 quadrillion       ??
+BBEAVER 7:     
+:
