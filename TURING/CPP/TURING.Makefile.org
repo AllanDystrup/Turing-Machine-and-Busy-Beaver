@@ -1,0 +1,69 @@
+# TURING CPP PROJECT
+#
+# ----- Switch to Ubuntu for Linux build tools
+# C:\Users\allan>		wsl -d Ubuntu -u allan
+# allan@LAPTOP-6UIHQ2QE:/mnt/c/Users/allan$  cd CLionProjects/turing/CPP/T32
+# allan@LAPTOP-6UIHQ2QE:/mnt/c/Users/allan/CLionProjects/turing/CPP/T32$
+#
+# -----------------------------------------------------------------
+
+# SUFFIXES
+#------------------------------------------------------------------
+#.SUFFIXES:			# # Delete the default suffixes
+#.SUFFIXES: .cpp .obj .exe	# Define our suffix list
+
+
+# MACROS
+#------------------------------------------------------------------
+CC = cl
+#CINC = /I.
+LNK = link
+PRJ = F:\DEV\TURING\
+
+
+# COMPILE/LINK
+#------------------------------------------------------------------
+!ifndef DEBUG
+DEBUG=no
+!endif
+
+!if "$(DEBUG)" == "yes"
+CF = /nologo -c -W3 -Zp -Od Og Oi
+LFLAGS = /nologo
+CFLAGS =  $(CF) /Zi /Od /D "_DEBUG"
+!else
+CFLAGS = $(CF) -G6 -O2
+!endif
+
+
+# INFERENCE RULES   (run: nmake /P)
+#------------------------------------------------------------------
+.cpp.obj:
+  $(CC) $(CFLAGS) $(CINC) /c  /ML $*.CPP  /Fo.\bin\$*.OBJ
+
+.obj.exe:
+  cd .\bin
+  $(LNK) $(LFLAGS) $**
+  cd ..
+#/OUT:.\bin\$*.EXE
+
+
+# TARGETS (& Dependencies)
+#------------------------------------------------------------------
+all:  TMTEST.EXE BBTEST.EXE
+
+TMTEST.EXE:	TMTEST.OBJ GENERAL.OBJ TURING.OBJ BEAVER.OBJ
+
+BBTEST.EXE:	BBTEST.OBJ GENERAL.OBJ TURING.OBJ BEAVER.OBJ SLIST.OBJ RANDOM.OBJ
+
+
+# PSEUDOTARGETS
+#------------------------------------------------------------------
+clean:
+  rm .\bin\*.*
+  dir
+
+browse:
+  BSCMAKE *.sbr
+
+
