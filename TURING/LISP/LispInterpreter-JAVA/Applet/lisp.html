@@ -1,0 +1,35 @@
+<!--	
+	The LISP Interpreter Java Applet was released by G J Chaitin in Dec 1999.
+
+	   Back then, it was common to distribute a small java program compiled to 
+	bytecode and embedded as an "applet" in a HTML web page for download by
+	a web browser and execution locally on a Java Virtual Machine (JVM), within 
+	a HTML frame, providing interactive features such as dynamic graphics.
+	Example: 	<APPLET height=350 width=700 code=lisp.class></APPLET>
+
+	-------------------------------------------------------------------------
+
+	Allan Dystrup: Port to windows 10 with WSL/Ubuntu. March 2026
+   
+	   During the following decade it became obvious that the applet technology
+	(Netscape Plugin Application Programming Interface: NPAPI) posed a security 
+	risk, so from Java 9 in 2017 the <APPLET> tag was deprecated and new technologies
+	like HTML5 with DOM, CSS and JavaScript became a more secure standard.
+	
+	   So today (2026) it is not possible to embed a java class in a modern browser
+	for remote distribution via a web-server with local execution in a JVM
+	(ERROR: "Java Plug-in is not supported by this browser"), BUT, you can still 
+	load and run an applet locally by using the SUN program: appletviewer.exe. 
+
+	The best way to do this is to copy: appletviewer.exe plus jli.dll from the Java 
+	Development Kit (JDK) distribution to your local applet class directory and 
+	run appletviewer.exe with your applet class as input,
+	Example: ...\CLionProjects\TURING\LISP\JAVA\Applet ./appletviewer.exe lisp.html	
+-->
+ 
+<HTML>
+    <HEAD><TITLE>Chaitin Lisp Interpreter</TITLE></HEAD>
+    <BODY>
+    <APPLET code="lisp.class" align="BOTTOM" height="480" width="720"></APPLET>
+    </BODY>
+</HTML>

@@ -1,0 +1,462 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0053)http://www.cs.auckland.ac.nz/CDMTCS/chaitin/ait2.html -->
+<HTML><HEAD><TITLE>Chaitin, Exploring RANDOMNESS</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252">
+<META content="MSHTML 6.00.2900.3268" name=GENERATOR></HEAD>
+<BODY>
+<H1>What is LISP? Why do I like it? </H1>
+<H2>Introduction </H2>The purpose of this book is to show you how to program the 
+proofs of the main theorems about program-size complexity, so that we can see 
+the algorithms in these proofs running on the computer. And in order to write 
+these programs, we need to use a programming language. Unfortunately, no 
+existing programming language is exactly what is needed. So I invented a dialect 
+of LISP that will do the job. In this chapter I'll explain the version of LISP 
+that I invented, and in the next chapter I'll tell you how to use it to program 
+the universal Turing machine that we'll use to measure the size of computer 
+programs and to define the program-size complexity <I>H</I>(<I>x</I>). 
+<P>So it is a two-stage process. First we'll see how this LISP works, then we'll 
+use it to program a Turing machine that accepts binary programs, not programs in 
+LISP. And the size of those binary programs will be our official program-size 
+measure, <I>H</I>(<I>x</I>). 
+<P>In this book we are not interested in the size of LISP programs, only in 
+using LISP to write and run the programs whose size we really care about. 
+<H2>The heart of pure LISP </H2><SMALL>[That's LISP with no side-effects, LISP 
+with pure functions.] </SMALL>
+<P>LISP is a non-numerical programming language, and it's a functional, 
+expression based language, not an imperative language. In LISP programs you 
+don't indicate how to calculate with numbers, instead you define functions that 
+deal with symbolic expressions, and then you apply these functions to specific 
+arguments. 
+<P>The symbolic expressions, or S-expressions, that we'll work with are abstract 
+versions of algebraic expressions in which everything is fully parenthesized, 
+and you can summarize the syntax of LISP by saying that the parentheses have to 
+balance. For example, here are some typical S-expressions: <PRE>   abracadabra
+   (abc (def ghi) klm)
+   (((wonderful)))
+   ()
+</PRE>LISP S-expressions are either ``atoms'' which are words, or they're lists. 
+It's either-or, with one exception. The exception is the empty list <TT>()</TT>, 
+which is also an atom. Otherwise a list consists of one or more atoms or 
+sublists. Successive atoms in a list need to be separated by one or more blanks, 
+but otherwise blanks are ignored. For example, here we need blanks to separate 
+the successive elements of a list: <PRE>   (x y z)
+</PRE>and here we don't need any blanks: <PRE>   ((x)(y)(z))
+</PRE>Note that, unlike a set, the elements in a list may be repeated, and there 
+is a first element, a second element, and so forth. For example <PRE>   (a b a)
+</PRE>is a valid S-expression. Its first element is <TT>a</TT>, the second 
+element is <TT>b</TT>, and the third element is also <TT>a</TT>. 
+<P>In LISP you're given some primitive functions for dealing with S-expressions, 
+and you have to define more elaborate functions from these primitive functions. 
+The LISP notation for <I>f</I>(<I>x</I>, <I>y</I>, <I>z</I>), for the function 
+<I>f</I> applied to the arguments <I>x</I>, <I>y</I> and <I>z</I>, is <TT>(f x y 
+z)</TT>. 
+<P>Here is the general rule for evaluating an S-expression. If it is an atom, 
+then its value is the current binding of that atom. Initially each atom is bound 
+to itself, except for the atom <TT>nil</TT>, which is bound to <TT>()</TT> and 
+gives us a name for the empty list. If an S-expression is not an atom, then its 
+value is defined recursively in terms of the values of its elements. First 
+evaluate the first element to determine the function to be applied, then 
+evaluate the remaining elements (from left to right) to determine the values of 
+the arguments, then apply the function to these arguments. And there are two 
+pseudo-functions which do not evaluate all of their arguments: quote <TT>'</TT> 
+and if-then-else <TT>if</TT>. 
+<P>What are the primitive functions for dealing with S-expressions? 
+<P>The first is <TT>car</TT>, which gives you the first element of a list. For 
+example, <TT>car</TT> of <TT>(a b c)</TT> is <TT>a</TT> and <TT>car</TT> of 
+<TT>((a a) (b b) (c c))</TT> is <TT>(a a)</TT>. The way you write this in LISP 
+is <PRE>   (car (' (a b c)))
+   (car (' ((a a) (b b) (c c))))
+</PRE>The first expression has value <TT>a</TT>, and the second expression has 
+value <TT>(a a)</TT>. The reason you need the quote function <TT>'</TT> in 
+<TT>(car (' (a b c)))</TT> is to indicate that the argument is literally <TT>(a 
+b c)</TT>, which would otherwise be taken to mean that the function whose name 
+is <TT>a</TT> should be applied to the value of the variables <TT>b</TT> and 
+<TT>c</TT>, which is not what we want. In other words, quote separates the 
+program from the data, it indicates where evaluation stops. 
+<P>Next comes <TT>cdr</TT>, which gives you the rest of a list, in other words, 
+what is left when the first element is omitted. For example, <TT>cdr</TT> of 
+<TT>(a b c)</TT> is <TT>(b c)</TT> and <TT>cdr</TT> of <TT>((a a) (b b) (c 
+c))</TT> is <TT>((b b) (c c))</TT>. So the LISP expressions <PRE>   (cdr (' (a b c)))
+   (cdr (' ((a a) (b b) (c c))))
+</PRE>evaluate to <PRE>   (b c)
+</PRE>and to <PRE>   ((b b) (c c))
+</PRE>respectively. And if you take the <TT>cdr</TT> of a list with only one 
+element, then you are left with the empty list <TT>()</TT>. For example, <PRE>   (car (' (abc)))
+   (cdr (' (abc)))
+</PRE>give, respectively, the values <PRE>   abc
+</PRE>and <PRE>   ()
+</PRE>
+<P>The next primitive function for dealing with lists is <TT>cons</TT>, which 
+reassembles lists that have been broken in two using <TT>car</TT> and 
+<TT>cdr</TT>. In other words, <TT>cons</TT> is the inverse of <TT>car</TT> and 
+<TT>cdr</TT>. For example, <PRE>   (cons a (' (b c)))
+</PRE>gives <TT>(a b c)</TT> and <PRE>   (cons (' (a a)) (' ((b b) (c c))))
+</PRE>gives <TT>((a a) (b b) (c c))</TT>. Note that in our first example we 
+wrote <TT>a</TT> instead of <TT>(' a)</TT> because <TT>a</TT> evaluates to 
+<TT>a</TT> unless we are inside a defined function in which we are using 
+<TT>a</TT> as the name of an argument, in which case <TT>a</TT> gives us the 
+value of that argument. Similarly, <PRE>   (cons a (cons b (cons c nil)))
+</PRE>gives us <TT>(a b c)</TT>. This is called ``consing up a list,'' and could 
+also be written <PRE>   (cons a (cons b (cons c ())))
+</PRE>or <PRE>   (cons (' a) (cons (' b) (cons (' c) (' ()))))
+</PRE>
+<P>So now we have a way to break a list into pieces, and to put the pieces back 
+together again. 
+<P>Then there are two predicates for examining S-expressions, <TT>atom</TT> and 
+equal <TT>=</TT>. <TT>Atom</TT> tells us if an S-expression is an atom or not, 
+and equal tells us if two S-expressions are identical. For example. <PRE>   (atom (' a))
+</PRE>gives <TT>true</TT>, <PRE>   (atom (' (a b c)))
+</PRE>is <TT>false</TT>, and <PRE>   (atom (' ()))
+   (atom nil)
+</PRE>are both <TT>true</TT>. Similarly, <PRE>   (= (' (a b c)) (' (a b c)))
+</PRE>and <PRE>   (= (' (a b c)) (' (a x c)))
+</PRE>give <TT>true</TT> and <TT>false</TT>, respectively. 
+<P>Next there is the if-then-else pseudo-function <TT>if</TT> for using a 
+predicate to choose between two expressions for a value. For example, <PRE>   (if true X Y)
+   (if false X Y)
+</PRE>give <TT>X</TT> and <TT>Y</TT>, respectively. If-then-else is a 
+pseudo-function, not a real function, because it only evaluates two of its three 
+arguments. The unselected argument is not evaluated. The predicate is always 
+evaluated. The other pseudo-function is quote, which never evaluates its one 
+argument. 
+<P>We've almost finished with the heart of pure LISP! We've seen quote 
+<TT>'</TT>, <TT>car</TT>, <TT>cdr</TT>, <TT>cons</TT>, <TT>atom</TT>, equal 
+<TT>=</TT>, and if-then-else <TT>if</TT>. What's missing is <TT>lambda</TT>, 
+which is used for defining functions that are not supplied as primitive 
+functions. For example, let's define the function that makes a list with its two 
+arguments in reverse order: <PRE>   ((' (lambda (x y) (cons y (cons x nil)))) a b)
+</PRE>This gives us the value <TT>(b a)</TT>. How does this work? Well, a 
+defined function is a triple of the form <PRE>   (lambda (x y...) body)
+</PRE>consisting of a list of argument names followed by the body of the 
+function, which is an expression which gives the value of the function. Most 
+important, note that within the body of the function the argument names are 
+bound to the actual values of the arguments. These bindings are temporary, they 
+only apply within the function body. So within <PRE>   (cons y (cons x nil))
+</PRE><TT>x</TT> is bound with <TT>a</TT> and <TT>y</TT> is bound with 
+<TT>b</TT>. 
+<P>Here we're literally giving the function definition, it's quoted, but we 
+could also give an arbitrary expression whose value is the function definition. 
+For example, if <TT>f</TT> is bound to <PRE>   (lambda (x y) (cons y (cons x nil)))
+</PRE>then <PRE>   (f a b)
+</PRE>gives <TT>(b a)</TT>. 
+<P>Now here is a real LISP program. I'll show you how to append two lists. For 
+example, if we append <PRE>   (a b c)
+</PRE>and <PRE>   (d e f)
+</PRE>we'll get <PRE>   (a b c d e f)
+</PRE>Let's call this function <TT>F</TT>. So we need to bind <TT>F</TT> to the 
+definition of this function. And how can we define it? Well, recursively, like 
+this. To append two lists <I>x</I> and <I>y</I>, first look at <I>x</I>. If 
+<I>x</I> is an atom, then <I>x</I> is the empty list, and the result is simply 
+the second list <I>y</I>. Otherwise, the result is obtained by consing the first 
+element of <I>x</I> with the result of appending the rest of <I>x</I> with 
+<I>y</I>. So we want to define <TT>F</TT> to be <PRE>   (lambda (x y) (if (atom x) y (cons (car x) (F (cdr x) y))))
+</PRE>Here's how we do it: <PRE>   ((' (lambda (F) (F (' (a b c)) (' (d e f)))))
+    (' (lambda (x y) (if (atom x) y (cons (car x) (F (cdr x) y)))))
+   )
+</PRE>This operation occurs so frequently, that we provide the let-be-in 
+macro[-operation] <TT>let</TT> which does this for us: <PRE>   (let (F x y) (if (atom x) y (cons (car x) (F (cdr x) y)))
+    (F (' (a b c)) (' (d e f)))
+   )
+</PRE><TT>Let</TT> is just syntactic sugar, it's just a convenient abbreviation 
+for the more complicated S-expression using two <TT>lambda</TT>'s. 
+<P>There's also a simpler version of <TT>let</TT>, which is used to assign a 
+value to a variable. That's let <TT>x</TT> be <TT>v</TT> in <TT>e</TT>, which is 
+written like this: <PRE>   (let x v e)
+</PRE>and expands to this: <PRE>   ((' (lambda (x) e)) v)
+</PRE>
+<P>That's it! This is really everything essential in traditional LISP! For 
+example, you don't need to have positive integers, you could define them as 
+lists of bits and then program out addition, multiplication and exponentiation 
+of binary numbers! And every expression that used an arithmetic operation would 
+have to contain its definition, they would have to be repeated again and again. 
+<P>So it would be very convenient to have a way of remembering function 
+definitions permanently, and also to have primitive functions for doing decimal 
+arithmetic. And there are far too many parentheses! So let's make our LISP more 
+practical. 
+<H2>A more practical LISP </H2>The first step in making this easier to use, is 
+to omit the parentheses for primitive functions, which will always have a fixed 
+number of arguments in my LISP. As my LISP interpreter reads an expression, it 
+will insert the missing parentheses automatically. So now we have two notations 
+for LISP expressions: the original S-expression notation, and a new meta 
+notation, M-expressions, which are abbreviated expressions with missing 
+parentheses and higher-level macro functions used as abbreviations for groups of 
+primitive functions. <SMALL>[There's also a double-quote <TT>"</TT> escape 
+mechanism for including an S-expression exactly as is within an M-expression.] 
+</SMALL>
+<P>Here are the number of arguments which are understood: <TT>'</TT>, 1; 
+<TT>car</TT>, 1; <TT>cdr</TT>, 1; <TT>cons</TT>, 2; <TT>atom</TT>, 1; 
+<TT>=</TT>, 2; <TT>if</TT>, 3; <TT>lambda</TT>, 2; <TT>let</TT>, 3. 
+<P>Also, to make life a little easier, we will make the quote function 
+<TT>'</TT> into a token delimiter like blank and parentheses, so we can always 
+jam a quote against something without ambiguity. <SMALL>[Like quote, 
+double-quote <TT>"</TT> is a delimiter, and can be jammed right up against 
+something.] </SMALL>
+<P>So now we just write <PRE>   cons a '(b c)
+</PRE>to denote <PRE>   (cons a (' (b c)))
+</PRE>whose value is the list <TT>(a b c)</TT>. 
+<P>And our list append example simplifies to this: <PRE>   ('lambda (F) (F '(a b c) '(d e f))
+    'lambda (x y) if atom x y
+                            cons car x (F cdr x y)
+   )
+</PRE>If we use the let-be-in macro, this expression gets even simpler. It 
+becomes: <PRE>   let (F x y) if (atom x) y
+                           cons car x (F cdr x y)
+   (F '(a b c) '(d e f))
+</PRE>
+<P>Two other convenient macros that are provided are <TT>cadr</TT> and 
+<TT>caddr</TT>: they expand into <TT>car</TT> of <TT>cdr</TT> and into 
+<TT>car</TT> of <TT>cdr</TT> of <TT>cdr</TT>, respectively. Thus <PRE>   car   '(a b c d)
+   cadr  '(a b c d)
+   caddr '(a b c d)
+</PRE>expand to <PRE>   (car           (' (a b c d)))
+   (car (cdr      (' (a b c d))))
+   (car (cdr (cdr (' (a b c d)))))
+</PRE>and evaluate to <TT>a</TT>, to <TT>b</TT>, and to <TT>c</TT>, 
+respectively. 
+<P>And let's throw in decimal numbers, unsigned integers, 0, 1, 2, ... And we'll 
+provide two-argument addition <TT>+</TT>, subtraction <TT>-</TT>, multiplication 
+<TT>*</TT>, and exponentiation <TT>^</TT>, and extend equal <TT>=</TT> to also 
+compare integers. E.g., the M-expression <PRE>   + * 2 3 * 4 5
+</PRE>denotes the S-expression <PRE>   (+ (* 2 3) (* 4 5))
+</PRE>whose value is 26. So we are using prefix notation instead of the usual 
+infix notation for arithmetic operators. We also throw in less-than 
+<TT>&lt;</TT>, greater-than <TT>&gt;</TT>, less-than-or-equal <TT>&lt;=</TT>, 
+and greater-than-or-equal <TT>&gt;=</TT>. And two one-argument primitive 
+functions for converting between base 2 and base 10: <TT>base10-to-2</TT> and 
+<TT>base2-to-10</TT>. 
+<P>And let's also add <TT>define</TT>, with two arguments, which is just like 
+let-be-in, except that it gives a permanent binding, not a temporary one, and 
+never evaluates any of its arguments. <TT>Define</TT> is not really in the 
+language; we should always use let-be-in, which is really <TT>lambda</TT> 
+binding, but it is convenient to allow <TT>define</TT> at the highest level of 
+the interpreter so that definitions don't have to be repeated within an 
+interpreter run. <TT>Define</TT> only works if it is the top level function 
+given to the interpreter, it cannot be inside another expression. 
+<P>So now we have something that begins to look like a fairly realistic 
+programming language. Here's how factorial looks. Here's 5 factorial; 5! = 5 by 
+4 by 3 by 2 by 1 = 120: <PRE>   define (factorial n)
+   [if n = 0, then 1, otherwise n times (n-1)!]
+      if = n 0 1 * n (factorial - n 1)
+ 
+   [try it!]
+   (factorial 5)
+</PRE>And the stuff in brackets are comments, which we had to have some way of 
+including. When you run this, the LISP interpreter will first indicate that 
+<TT>factorial</TT> is bound to <PRE>   (lambda (n) (if (= n 0) 1 (* n (factorial (- n 1)))))
+</PRE>and then that the value of <TT>(factorial 5)</TT> is 120. 
+<P>At this point you should go to my LISP interpreter web page at one of these 
+two URL's and try out all of this: <PRE>   <A href="http://www.cs.umaine.edu/~chaitin/unknowable/lisp.html">http://www.cs.umaine.edu/~chaitin/unknowable/lisp.html</A>
+   <A href="http://www.cs.auckland.ac.nz/CDMTCS/chaitin/unknowable/lisp.html">http://www.cs.auckland.ac.nz/CDMTCS/chaitin/unknowable/lisp.html</A>
+</PRE>Just type M-expressions into the upper window, click on run, and the 
+corresponding S-expressions and their values will appear in the lower window. 
+<H2>Additional functions for AIT </H2>Now let me show you some additional 
+primitive functions that I've added, mostly in order to program my basic 
+self-delimiting universal Turing machine in LISP, which we'll do in the next 
+chapter. 
+<P>We'll be dealing with very long bit strings, which we'll represent as very 
+long lists of 0's and 1's. These will be the self-delimiting binary programs 
+that we'll feed to my universal Turing machine, and the size of these binary 
+programs will give us our complexity measure <I>H</I>(<I>x</I>). 
+<P>I showed you how to append two lists, but having this as a defined function 
+is too inefficient. So we add a primitive function <TT>append</TT> that gives us 
+the combined list if it's given two lists. We'll use <TT>append</TT> to assemble 
+long binary programs from pieces. And the pieces will usually be produced by 
+another new primitive function, <TT>bits</TT>, that converts the character 
+string representation of an S-expression into an ASCII bit string, eight bits 
+per character, plus eight more bits for an unprintable UNIX newline control 
+character at the end. 
+<P>And we'll want to count how long the resulting bit strings are. So for that 
+we add a primitive function <TT>length</TT> that returns the number of elements 
+in a list. If this list is a bit string, a list of 0's and 1's, that will be the 
+number of bits in the bit string. There's also <TT>size</TT>, which gives us the 
+number of characters in the character string representation of an S-expression. 
+That's very useful if we're looking at the LISP program-size complexity of 
+<I>x</I>, which is the number of characters in the smallest S-expression that 
+has value <I>x</I>, which we did in <I>The Unknowable</I> and <I>The Limits of 
+Mathematics</I>, but which we won't be doing in this book. Here we're only 
+interested in the real thing: in the size in bits of the smallest 
+self-delimiting binary program for <I>x</I>. 
+<P>Next there's an identity function, <TT>display</TT>, which has the 
+side-effect of displaying its argument. This is normally used for debugging, but 
+we'll also use it to output infinite sets instead of only producing one result, 
+the value of an expression. In other words, <TT>display</TT> will be used to 
+enable non-halting LISP expressions to generate infinite sets of S-expressions 
+as output. 
+<P>Next there's <TT>eval</TT>, which may be thought of as the inverse of quote. 
+What it really does is enable us to run LISP code that we've generated somehow. 
+The argument of <TT>eval</TT> is evaluated in a fresh environment, in which each 
+atom is bound to itself and <TT>nil</TT> is bound to <TT>()</TT>. If you 
+<TT>eval</TT> an unending LISP expression then you lose control, you never get a 
+result back. The way to deal with this is called <TT>try</TT>, which performs a 
+time-limited evaluation and captures any displays. It also has another very 
+important role, which is to provide the LISP expression that it's running with 
+binary data on the side. 
+<P><TT>Try</TT> has three arguments: a time limit &#945;, an expression to be 
+evaluated &#946;, and a list of 0's and 1's &#947;. The number &#945; is either a time limit 
+for evaluating &#946;, or it's <TT>no-time-limit</TT> indicating that there is no 
+time limit. As the S-expression &#946; is evaluated, the arguments of all its 
+<TT>display</TT>'s are captured, and &#946; can read in its binary data &#947;: either bit 
+by bit using the zero-argument primitive function <TT>read-bit</TT>, or a 
+complete S-expression at a time using the zero-argument primitive function 
+<TT>read-exp</TT>. <TT>Read-exp</TT> reads in eight-bit ASCII characters until 
+it finds a UNIX newline, and returns the S-expression whose character string 
+representation it has read. <TT>Read-bit</TT> and <TT>read-exp</TT> both fail if 
+they run off the end of the binary data &#947;. In that case the <TT>(try</TT> &#945; &#946; 
+&#947;<TT>)</TT> fails due to running out of data. It can also fail by running out of 
+time. 
+<P>The value that <TT>try</TT> returns is a triple. The first element will 
+either be <TT>success</TT> or <TT>failure</TT>. The second element will either 
+be the value of &#946; if the <TT>try</TT> was a success, or it will be 
+<TT>out-of-time</TT> if the time limit &#945; was exceeded or <TT>out-of-data</TT> if 
+&#946; ran out of binary data. These are the only two possible failure modes, because 
+otherwise my LISP has very permissive semantics and will always go ahead and do 
+something. And the third element of the value of a <TT>try</TT> is the 
+chronological list of captured <TT>display</TT>'s. 
+<P>Note that like <TT>eval</TT>, <TT>try</TT> evaluates its argument &#946; in a 
+fresh environment. However, evaluating the argument of <TT>eval</TT> may have 
+the side effect of reading in part of the current binary data (the binary data 
+in the immediately containing <TT>try</TT>), while the argument &#946; of a 
+<TT>try</TT> reads in data from its own binary data &#947; and cannot touch any other 
+<TT>try</TT>'s binary data. <SMALL>[Other side-effects of an <TT>eval</TT>: 
+<TT>eval</TT> may also do <TT>display</TT>'s, which <TT>try</TT> cannot.] 
+</SMALL>
+<P>Finally, let's throw in another identity function <TT>debug</TT> that also 
+displays its argument, but which is not seen by the official 
+<TT>display</TT>/<TT>try</TT> mechanism in which <TT>display</TT> throws 
+intermediate results and <TT>try</TT> catches them. 
+<P><TT>Try</TT> is the real difference between my LISP and a normal LISP; it's 
+what I had to add to LISP to do algorithmic information theory. The fundamental 
+semantic notion in normal LISP is evaluation, which maps an S-expression and the 
+current bindings into its value. In my LISP the fundamental semantic notion of 
+evaluation maps an S-expression and associated binary data plus the current 
+bindings into its value; the argument of evaluation is a triple, not a pair. 
+<P>And the key self-delimiting feature of <TT>read-bit</TT> and 
+<TT>read-exp</TT> needed in order to implement algorithmic information theory 
+properly is that they are not allowed to run off the end of the binary data &#947; 
+and peacefully return an ``end-of-file'' indication. Instead they abort, and 
+they abort the containing S-expressions with them, which percolates up to the 
+immediately containing <TT>try</TT>. 
+<P>Note that it is very important that <TT>try</TT>'s and <TT>eval</TT>'s can be 
+nested to arbitrary depth; if two <TT>try</TT>'s are nested the most 
+constraining time limit is in effect. And how are these time limits measured? 
+Well, roughly speaking, they're measured via the interpreter push-down stack 
+depth, as the depth of nested subroutine calls or nested function definitions in 
+the LISP evaluation. More precisely (thanks to R.M. Solovay), the time limit 
+bounds the number of pending re-evaluations due to <TT>eval</TT>, to 
+<TT>try</TT>, and to defined functions (<TT>lambda</TT> expressions). 
+<SMALL>[Solovay pointed out to me that my original formulation of <TT>try</TT> 
+in the first printing of my 1987 Cambridge University Press monograph was not 
+quite right; subsequent printings corrected this.] </SMALL>The important point 
+is that if there is a time limit, then a <TT>try</TT> must terminate, either 
+with the correct value or with a failure indication. Thus it is always perfectly 
+safe to do a time-limited <TT>try</TT>. 
+<P>Well that's all there is, it's all you need to run algorithmic information 
+theory on the computer! In the next chapter I'll show you how. 
+<H2>Exercises </H2>
+<OL>
+  <P>
+  <LI>Play with the Java applet LISP interpreter; try out all the built-in 
+  primitive and macro functions. 
+  <P></P>
+  <LI>Define the functions for reversing the top level of a list, and for 
+  reversing all sublists too. 
+  <P></P>
+  <LI>Define the function <TT>flatten</TT> that removes all the inner 
+  parentheses from an S-expression, leaving only the outermost pair. 
+  <P></P>
+  <LI>Define the substitution function <TT>(subst</TT> <I>e</I> <I>x</I> 
+  <I>r</I><TT>)</TT> that substitutes <I>r</I> for all occurrences of the atom 
+  <I>x</I> in the S-expression <I>e</I>. 
+  <P></P>
+  <LI>Define functions for sorting lists of positive integers into ascending 
+  order. For example, program bubble sort, and try dividing the list into two 
+  halves, sorting each half, and then merging the results. 
+  <P></P>
+  <LI>Program base-two addition, multiplication and exponentiation. Represent 
+  positive integers as lists of 0's and 1's. Does it pay to keep the bits in 
+  reverse order? 
+  <P></P>
+  <LI>Program elementary set theory for finite sets of S-expressions: 
+  membership, set inclusion, union, intersection, subtraction, cross product 
+  (set of pairs from two sets), and set of all subsets. A set is represented as 
+  a list without repetitions. 
+  <P></P>
+  <LI>Program intersection and union of infinite sets of S-expressions. You are 
+  given two non-halting LISP expressions that <TT>display</TT> the elements of 
+  the two sets. Use <TT>try</TT> to run both computations for time <I>t</I>, 
+  examine the elements that have been produced so far, then let <I>t</I> go to 
+  infinity. Avoid repeated output. 
+  <P></P>
+  <LI>Program LISP semantics in LISP. Represent bindings as a list of pairs, and 
+  define recursively the function <TT>evl</TT> with two arguments: an 
+  S-expression to be evaluated, and a list of bindings. Just handle quote, 
+  if-then-else, <TT>lambda</TT>, <TT>car</TT>, <TT>cdr</TT>, <TT>cons</TT>, 
+  <TT>atom</TT>, <TT>=</TT>, and <TT>display</TT>. <I>Hint:</I> Use <TT>((nil 
+  ()))</TT> as the initial list of bindings, and make any unbound atom evaluate 
+  to itself. Put additional bindings at the front of the list, where they shadow 
+  any previous bindings. You'll need to use the double-quote <TT>"</TT> notation 
+  for including S-expressions in M-expressions. For example, <TT>"car</TT> is 
+  just the word <TT>car</TT> without any implicit parentheses or arguments. 
+  <P></P>
+  <LI>[Preview of next chapter!] Take a look at the <TT>run-utm-on p</TT> macro 
+  which expands to <PRE>   cadr try no-time-limit 'eval read-exp p
+</PRE>and then to <PRE>   (car (cdr (try no-time-limit (' (eval (read-exp))) p)))
+</PRE>Try to figure out what this does; it plays a key role in the next 
+  chapter. This macro is only provided in the Java applet version of my LISP 
+  interpreter. Fix the Mathematica and the C versions of the interpreter so that 
+  they also have <TT>run-utm-on</TT>. You can find the source code at these 
+  URL's: <PRE>   <A href="http://www.cs.umaine.edu/~chaitin/lisp.m">http://www.cs.umaine.edu/~chaitin/lisp.m</A>
+   <A href="http://www.cs.umaine.edu/~chaitin/lisp.c">http://www.cs.umaine.edu/~chaitin/lisp.c</A>
+
+   <A href="http://www.cs.auckland.ac.nz/CDMTCS/chaitin/lisp.m">http://www.cs.auckland.ac.nz/CDMTCS/chaitin/lisp.m</A>
+   <A href="http://www.cs.auckland.ac.nz/CDMTCS/chaitin/lisp.c">http://www.cs.auckland.ac.nz/CDMTCS/chaitin/lisp.c</A>
+</PRE>
+  <P></P>
+  <LI>[Language improvements!] Add the two-argument primitive function not-equal 
+  <TT>!=</TT> to the three versions of the interpreter. Also add the 
+  two-argument primitive function <TT>do</TT> that discards the value of its 
+  first argument and returns the value of its second argument. Then implement 
+  logical not <TT>!</TT>, and <TT>&amp;</TT> and or <TT>|</TT> as macros: <PRE>   ! p
+   &amp; p q
+   | p q
+</PRE>expand to <PRE>   (if p false true)
+   (if p q false)
+   (if p true q)
+</PRE>respectively. </LI></OL>
+<H2>LISP interpreter URL's </H2>You can use our Java applet LISP interpreter at 
+these URL's: <PRE><A href="http://www.cs.umaine.edu/~chaitin/unknowable/lisp.html">http://www.cs.umaine.edu/~chaitin/unknowable/lisp.html</A>
+<A href="http://www.cs.auckland.ac.nz/CDMTCS/chaitin/unknowable/lisp.html">http://www.cs.auckland.ac.nz/CDMTCS/chaitin/unknowable/lisp.html</A>
+</PRE>The Java source code for this applet is at these URL's: <PRE><A href="http://www.cs.umaine.edu/~chaitin/unknowable/lisp.java">http://www.cs.umaine.edu/~chaitin/unknowable/lisp.java</A>
+<A href="http://www.cs.umaine.edu/~chaitin/unknowable/Sexp.java">http://www.cs.umaine.edu/~chaitin/unknowable/Sexp.java</A>
+
+<A href="http://www.cs.auckland.ac.nz/CDMTCS/chaitin/unknowable/lisp.java">http://www.cs.auckland.ac.nz/CDMTCS/chaitin/unknowable/lisp.java</A>
+<A href="http://www.cs.auckland.ac.nz/CDMTCS/chaitin/unknowable/Sexp.java">http://www.cs.auckland.ac.nz/CDMTCS/chaitin/unknowable/Sexp.java</A>
+</PRE>
+<H2>Built-in primitive and macro functions </H2>
+<UL>
+  <P>
+  <LI><B>Three arguments:</B> <TT>if</TT>, <TT>let</TT>, <TT>try</TT> 
+  <P></P>
+  <LI><B>Two arguments:</B> <TT>cons</TT>, <TT>=</TT>, <TT>lambda</TT>, 
+  <TT>define</TT>, <TT>append</TT>, <TT>+</TT>, <TT>-</TT>, <TT>*</TT>, 
+  <TT>^</TT>, <TT>&lt;</TT>, <TT>&gt;</TT>, <TT>&lt;=</TT>, <TT>&gt;=</TT> 
+  <P></P>
+  <LI><B>One argument:</B> <TT>'</TT>, <TT>car</TT>, <TT>cdr</TT>, 
+  <TT>atom</TT>, <TT>cadr</TT>, <TT>caddr</TT>, <TT>bits</TT>, <TT>display</TT>, 
+  <TT>debug</TT>, <TT>length</TT>, <TT>size</TT>, <TT>base10-to-2</TT>, 
+  <TT>base2-to-10</TT>, <TT>run-utm-on</TT> 
+  <P></P>
+  <LI><B>Zero arguments:</B> <TT>read-bit</TT>, <TT>read-exp</TT>, 
+  [<TT>was-read</TT>] 
+  <P><SMALL>[<TT>Was-read</TT> is an experimental primitive function that is 
+  only in the Java applet version of the interpreter; see Exercise 7 at the end 
+  of the next chapter.] </SMALL></P></LI></UL>
+<H2>Other LISP language elements </H2>
+<UL>
+  <P>
+  <LI><B>Atoms with special meaning:</B> <TT>nil</TT>, <TT>true</TT>, 
+  <TT>false</TT>, <TT>success</TT>, <TT>failure</TT>, <TT>out-of-time</TT>, 
+  <TT>out-of-data</TT>, <TT>no-time-limit</TT> 
+  <P></P>
+  <LI><B>Token delimiter characters:</B> blank <TT>( ) [ ] ' "</TT> 
+</LI></UL></BODY></HTML>
