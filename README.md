@@ -1,6 +1,7 @@
 # Turing-Machine-and-Busy-Beaver
-Programs in C++ and C# to simulate a Universal Turing Machine and run a Busy Beaver search on this.
+Programs in C++, C# Perl and LISP to simulate a Universal Turing Machine, run a Busy Beaver search on this and explore the concepts of computability and incompleteness of axiomatic systems fundamental to Computer Science.
 ```
+
   /// #region classdoc
   /// <summary>
   /// CLASS TURING, a type for simulation of a Universal Turing Machine (UTM).
