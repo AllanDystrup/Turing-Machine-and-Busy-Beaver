@@ -68,8 +68,8 @@ Programs in C++, C# Perl and LISP to simulate a Universal Turing Machine, run a 
   /// HISTORY
   /// --------------------
   /// sbTrans;	// Trace of state transitions (cyclic buffer)
-  ///	sITrans;	// Index to current position in sbTrans
-  /// lTrans;		// #SstateTransitions total
+  /// sITrans;	// Index to current position in sbTrans
+  /// lTrans;	// #SstateTransitions total
   ///                     
   ///             +-+-+-+--/\/----+-+------------------------/\/--+-+
   /// sbTrans---->| | | |  ...    | |             ...             | | WRAP
