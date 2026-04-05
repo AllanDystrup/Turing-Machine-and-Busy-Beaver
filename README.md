@@ -100,21 +100,21 @@ Programs in C++, C# Perl and LISP to simulate a Universal Turing Machine, run a 
   ///					 The Bell System Technical Journal,
   ///					( Volume: 41, Issue: 3, pp.877 - 884, May 1962)
   ///
-	///  USAGE 		Test drivers,
-	///					Console UI:		./bin/TuringConUI.exe
-	///					Windows UI: 	./bin/TuringWinUI.exe
-	///					Application:	./bib/Beaver.exe
-	///
- 	///  DOC			Incorporated in the code comments. 
-	///
-	///	 BUGS:
-	///		Design:	The main design principle has been comprehensibility and fast 
-	///             execution, - NOT maximum reusability (eg. Class Turing could be
-	///             decomposed into Class TMProgram, Class TMTape etc.
-	///  	Code:	This is an alpha/pre-release, and as such it has not been 
-	///				developed for robustness or strict code standard compliance.
-	///
-	///  COPYRIGHT   none!
+  ///  USAGE 		Test drivers,
+  ///					Console UI:		./bin/TuringConUI.exe
+  ///					Windows UI: 	./bin/TuringWinUI.exe
+  ///					Application:	./bib/Beaver.exe
+  ///
+  ///  DOC			Incorporated in the code comments. 
+  ///
+  ///	 BUGS:
+  ///		Design:	The main design principle has been comprehensibility and fast 
+  ///             execution, - NOT maximum reusability (eg. Class Turing could be
+  ///             decomposed into Class TMProgram, Class TMTape etc.
+  ///  	Code:	This is an alpha/pre-release, and as such it has not been 
+  ///				developed for robustness or strict code standard compliance.
+  ///
+  ///  COPYRIGHT   none!
   /// </remarks>
   ///  #endregion
 
@@ -123,7 +123,7 @@ Programs in C++, C# Perl and LISP to simulate a Universal Turing Machine, run a 
 	/// CLASS BEAVER, a type for simulation of a "Busy Beaver" TM (BBTM);
 	/// (A wrapper of class Turing for: BB State, Pesistence, TM generation & Dump)
 	/// </summary>
-  ///  ----------------------------------------------------------------------------
+    ///  ----------------------------------------------------------------------------
 	/// <remarks>
 	///  The purpose of the "Busy Beaver" simulation is to find n-state "Busy" TM's; 
 	///  An n-state "Beasy Beaver" Turing Machine: BBTM(n) is defined by:
